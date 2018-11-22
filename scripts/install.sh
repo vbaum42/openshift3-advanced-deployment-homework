@@ -1,4 +1,4 @@
 #!/usr/bin/sh
 
-ansible-playbook ./../playbooks/homework.yml
+ansible-playbook ./playbooks/homework.yaml
 

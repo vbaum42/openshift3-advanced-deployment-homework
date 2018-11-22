@@ -9,9 +9,9 @@
   hosts: localhost
   tasks: 
     - name: "Script setup permision set.."
-      shell: chmod 755 ./../scripts/script_setup.sh
+      shell: chmod 755 ./scripts/script_setup.sh
     - name: "Setting up the scripts.."
-      shell: ./../scripts/script_setup.sh
+      shell: ./scripts/script_setup.sh
 
 - name: Verify Installation and Configuration of Docker
   hosts: nodes
@@ -33,7 +33,7 @@
   hosts: localhost
   tasks:
     - name: Generate Inventory script
-      script: ./../scripts/generate_inventory.sh
+      script: ./scripts/generate_inventory.sh
 
 - name: Execute the openshift-ansible prerequisites
   import_playbook: /usr/share/ansible/openshift-ansible/playbooks/prerequisites.yml
@@ -69,7 +69,7 @@
   hosts: nfs
   tasks:
     - name: "Create PV directories and add them to be exported"
-      script: ./../scripts/create_pvs.sh
+      script: ./scripts/create_pvs.sh
     - name: Restarting NFS Server...
       shell: systemctl restart nfs-server
   tags:
@@ -79,13 +79,13 @@
   hosts: localhost
   tasks:
     - name: "Creating the files.."
-      script: ./../scripts/pvs_5Gsize.sh
+      script: ./scripts/pvs_5Gsize.sh
   
 - name: Create 25 definitions files for PVs 10G size
   hosts: localhost
   tasks:
     - name: "Creating the files.."
-      script: ./../scripts/pvs_10Gsize.sh
+      script: ./scripts/pvs_10Gsize.sh
 
 - name: Create all PVs from definitions files
   hosts: localhost
@@ -129,7 +129,7 @@
   hosts: localhost
   tasks: 
     - name: Create project request template in default project
-      shell: "oc create -f ./../templates/proj-temp.yml -n default || oc replace -f ./../templates/proj-temp.yml -n default"
+      shell: "oc create -f ./templates/proj-temp.yml -n default || oc replace -f ./templates/proj-temp.yml -n default"
   tags:
     - fixtemplate
 
@@ -172,7 +172,7 @@
   hosts: masters
   tasks:
     - name: Adding users for alpha and beta
-      script: ./../scripts/add-users.sh
+      script: ./scripts/add-users.sh
   tags:
     - create_users
 
@@ -200,4 +200,4 @@
   hosts: localhost
   tasks:
     - name: Multitenancy Test
-      script: ./../scripts/multitenancy.sh
+      script: ./scripts/multitenancy.sh
