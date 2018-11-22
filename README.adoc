@@ -1,1 +1,16 @@
-= OpenShift Container Platform - Advanced Deployment - HomeworkSteps for completing deployment on an OpenShift 3.10.34 environment:1. launch a new homework environment (3.10.34) an log in2. Go to root: “sudo -i”3. Clone repo:“git clone https://github.com/vbaum42/openshift3-advanced-deployment-homework”4. Run script command to install:"ansible-playbook ./openshift3-advanced-deployment-homework/scripts/install.sh"5. Uninstall (optional):"sh ./openshift3-advanced-deployment-homework/scripts/uninstall.sh"6. examine the output through log files7. exmaine the deployed OpenShift to ensure that all aspects of the homework weredeployed properly.
+= OpenShift Container Platform - Advanced Deployment - Homework Template
+
+Use the files in this repo to guide you on your way to creating
+a fully automated deployment of OpenShift.
+
+The person grading the assignment will: 
+
+1. launch a new homework environment (3.10.34) an log in to it
+2. Go to root: "sudo -i"
+3. Clone repo: "git clone https://github.com/vbaum42/openshift3-advanced-deployment-homework"
+4. Run script command to install: "sh ./openshift3-advanced-deployment-homework/scripts/install.sh"
+5. Uninstall (optional): "sh ./openshift3-advanced-deployment-homework/scripts/uninstall.sh"
+6. examine the output through log files
+7. exmaine the deployed OpenShift to ensure that all aspects of the homework were deployed properly
+
+
