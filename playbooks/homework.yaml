@@ -1,0 +1,203 @@
+---
+- name: Prepare GUID environment variable across all hosts
+  hosts: all
+  tasks:
+    - name: All GUID env variable
+      shell: export GUID=`hostname | cut -d"." -f2`; echo "export GUID=$GUID" >> $HOME/.bashrc
+
+- name: Script setup
+  hosts: localhost
+  tasks: 
+    - name: "Script setup permision set.."
+      shell: chmod 755 ./../scripts/script_setup.sh
+    - name: "Setting up the scripts.."
+      shell: ./../scripts/script_setup.sh
+
+- name: Verify Installation and Configuration of Docker
+  hosts: nodes
+  tasks:
+    - name: docker restart
+      shell: systemctl restart docker
+      
+- name: Install packages and config auth
+  hosts: localhost
+  tasks:
+    - name: required packages are present
+      yum:
+        name:
+          - atomic-openshift-clients
+          - atomic-openshift
+        state: present
+
+- name: Generate Inventory Hosts File
+  hosts: localhost
+  tasks:
+    - name: Generate Inventory script
+      script: ./../scripts/generate_inventory.sh
+
+- name: Execute the openshift-ansible prerequisites
+  import_playbook: /usr/share/ansible/openshift-ansible/playbooks/prerequisites.yml
+
+- name: Execute the openshift-ansible Deployer
+  import_playbook: /usr/share/ansible/openshift-ansible/playbooks/deploy_cluster.yml
+
+- name: Verify OpenShift Cluster
+  hosts: masters[0]
+  tasks:
+    - name: tar .kube dir
+      archive:
+        path: /root/.kube
+        dest: /root/kube.tar.gz
+    - name: copy the .kube directory from master1 to your bastion
+      fetch:
+        src: /root/kube.tar.gz
+        dest: /root/
+        flat: yes
+- name: Untar .kube
+  hosts: localhost
+  tasks:
+    - name: untar .kube
+      shell: tar -zxvf /root/kube.tar.gz -C /root
+
+- name: Post installation configuration
+  hosts: localhost
+  tasks:
+    - name: make sure you are system:admin
+      shell: oc whoami | grep system:admin
+
+- name: Create PVs for Users
+  hosts: nfs
+  tasks:
+    - name: "Create PV directories and add them to be exported"
+      script: ./../scripts/create_pvs.sh
+    - name: Restarting NFS Server...
+      shell: systemctl restart nfs-server
+  tags:
+    - nfs
+
+- name: Create 25 definitions files for PVs 5G size
+  hosts: localhost
+  tasks:
+    - name: "Creating the files.."
+      script: ./../scripts/pvs_5Gsize.sh
+  
+- name: Create 25 definitions files for PVs 10G size
+  hosts: localhost
+  tasks:
+    - name: "Creating the files.."
+      script: ./../scripts/pvs_10Gsize.sh
+
+- name: Create all PVs from definitions files
+  hosts: localhost
+  tasks:
+    - name: "Creating PVs from the files.."
+      shell: "cat /root/pvs/* | oc create -f -"
+
+- name: Fix NFS Persistent Volume Recycling
+  hosts: nodes
+  tasks:
+    - name: "pull the recycler image"
+      shell: docker pull registry.access.redhat.com/openshift3/ose-recycler:latest
+    - name: "tag the recycler image for specific version"
+      shell: docker tag registry.access.redhat.com/openshift3/ose-recycler:latest registry.access.redhat.com/openshift3/ose-recycler:v3.10.34
+  tags:
+    - fixnfs
+
+
+- name: Setup CI/CD pipeline
+  hosts: localhost
+  tasks:
+    - name: Checkout CI/CD demo code..
+      git:
+        repo: 'https://github.com/vbaum42/openshift3-cd-demo'
+        dest: /root/openshift3-cd-demo
+    - name: Permissions..
+      shell: sed -i -e 's/\r$//' /root/openshift3-cd-demo/scripts/provision.sh
+    - name: Adding permissions
+      shell: chmod 755 /root/openshift3-cd-demo/scripts/provision.sh
+    - name: permiissions..
+      shell: sed -i -e 's/\r$//' /root/openshift3-cd-demo/cicd-template.yaml
+    - name: Adding rest of permissions
+      shell: chmod 755 /root/openshift3-cd-demo/cicd-template.yaml   
+    - name: Provision the demo environment..
+      shell: /root/openshift3-cd-demo/scripts/provision.sh --user andrew deploy
+  tags:
+    - cicd
+
+
+- name: Setup project request template
+  hosts: localhost
+  tasks: 
+    - name: Create project request template in default project
+      shell: "oc create -f ./../templates/proj-temp.yml -n default || oc replace -f ./../templates/proj-temp.yml -n default"
+  tags:
+    - fixtemplate
+
+- name: Update the master config file to use project request template
+  hosts: masters
+  tasks:
+    - name: Add the project request template to the master config"
+      lineinfile:
+        regexp: "  projectRequestTemplate"
+        dest: "/etc/origin/master/master-config.yaml"
+        line: '  projectRequestTemplate: "default/project-request"'
+        state: present
+    - name: Restart master API service 
+      shell: systemctl restart atomic-openshift-node
+  tags:
+    - fixtemplate
+
+- name: Smoke Test
+  hosts: localhost
+  tasks:
+    - name: Create the smoke-test project
+      shell: oc new-project smoke-test
+    - name: Deploy the test app
+      shell: oc new-app --namespace smoke-test nodejs-mongo-persistent 
+  tags:
+    - smoke-test
+
+- name: Creation of projects for Alpha and Beta clients
+  hosts: localhost
+  tasks:
+    - name: Create alpha project
+      shell: oc new-project alpha
+    - name: Create beta project
+      shell: oc new-project beta
+  tags:
+    - create_projects
+
+
+- name: Creation of users for Alpha and Beta clients
+  hosts: masters
+  tasks:
+    - name: Adding users for alpha and beta
+      script: ./../scripts/add-users.sh
+  tags:
+    - create_users
+
+- name: Kick off the pipeline
+  hosts: localhost
+  tasks:
+    - name: Wait for the demo environment to fully spin up
+      shell: sleep 300 
+    - name: Kick off the pipeline
+      shell: "oc start-build tasks-pipeline -n tasks-dev"
+  tags:
+    - cicd
+
+- name: HPA configuration on production deployment of openshift-tasks
+  hosts: localhost
+  tasks:
+    - name: Wait for tasks pipeline to build
+      shell: sleep 600 
+    - name: Configure autoscaling on openshift-tasks..
+      shell: oc autoscale dc tasks --max 5 --min 2 --cpu-percent 80 -n tasks-prod
+  tags:
+    - hpa
+
+- name: Multitenancy Test
+  hosts: localhost
+  tasks:
+    - name: Multitenancy Test
+      script: ./../scripts/multitenancy.sh
