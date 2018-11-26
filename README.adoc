@@ -5,7 +5,7 @@ a fully automated deployment of OpenShift.
 
 The person grading the assignment will: 
 
-1. launch a new homework environment (3.10.34) an log in to it
+1. launch a new homework environment (3.11.16) an log in to it
 2. Go to root: "sudo -i"
 3. Clone repo: "git clone https://github.com/vbaum42/openshift3-advanced-deployment-homework"
 4. Run script command to install: "sh ./openshift3-advanced-deployment-homework/scripts/install.sh"
