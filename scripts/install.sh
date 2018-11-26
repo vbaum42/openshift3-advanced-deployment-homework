@@ -1,4 +1,5 @@
 #!/usr/bin/sh
 
-ansible-playbook ./playbooks/homework.yaml
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+ansible-playbook $DIR/../playbooks/homework.yaml
 
