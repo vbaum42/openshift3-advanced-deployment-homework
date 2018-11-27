@@ -8,7 +8,9 @@ ansible masters -m shell -a 'htpasswd -b /etc/origin/master/htpasswd brian r3dh4
 ansible masters -m shell -a 'htpasswd -b /etc/origin/master/htpasswd betty r3dh4t1!'
 
 oc adm groups new alpha amy andrew
+oc label group alpha client=alpha
 oc adm groups new beta brian betty
+oc label group beta client=beta
 
 for OCP_USERNAME in amy andrew brian betty; do
 

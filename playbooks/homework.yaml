@@ -104,23 +104,33 @@
     - fixnfs
 
 
-- name: Setup CI/CD pipeline
+- name: Setup CI/CD projects
   hosts: localhost
   tasks:
-    - name: Checkout CI/CD demo code..
-      git:
-        repo: 'https://github.com/vbaum42/openshift3-cd-demo'
-        dest: /root/openshift3-cd-demo
-    - name: Permissions..
-      shell: sed -i -e 's/\r$//' /root/openshift3-cd-demo/scripts/provision.sh
-    - name: Adding permissions
-      shell: chmod 755 /root/openshift3-cd-demo/scripts/provision.sh
-    - name: permiissions..
-      shell: sed -i -e 's/\r$//' /root/openshift3-cd-demo/cicd-template.yaml
-    - name: Adding rest of permissions
-      shell: chmod 755 /root/openshift3-cd-demo/cicd-template.yaml   
-    - name: Provision the demo environment..
-      shell: /root/openshift3-cd-demo/scripts/provision.sh --user andrew deploy
+    - name: Create Jenkins project
+      shell: oc new-project cicd --description='CI/CD Tools Environment' --display-name='CICD - Jenkins'
+    - name: Create Development project
+      shell: oc new-project tasks-dev --description='Openshift tasks Development' --display-name='Tasks - Development'
+    - name: Create Testing project
+      shell: oc new-project tasks-test --description='Openshift tasks Testing' --display-name='Tasks - Test'    
+    - name: Create Production project
+      shell: oc new-project tasks-prod --description='Openshift tasks Production' --display-name='Tasks - Production'
+    - name: Create Jenkins app
+      shell: oc new-app jenkins-persistent --param MEMORY_LIMIT=2Gi --param VOLUME_CAPACITY=4Gi -p ENABLE_OAUTH=false -e JENKINS_PASSWORD=homework -n cicd
+    - name: Policy Jenkins to dev...
+      shell: oc policy add-role-to-user edit system:serviceaccount:cicd:jenkins -n tasks-dev
+    - name: Policy Jenkins to test...
+      shell: oc policy add-role-to-user edit system:serviceaccount:cicd:jenkins -n tasks-test
+    - name: Policy Jenkins to prod...
+      shell: oc policy add-role-to-user edit system:serviceaccount:cicd:jenkins -n tasks-prod
+    - name: Policy image puller to dev
+      shell: oc policy add-role-to-group system:image-puller system:serviceaccounts:tasks-dev -n cicd
+    - name: Policy image puller to test..
+      shell: oc policy add-role-to-group system:image-puller system:serviceaccounts:tasks-test -n cicd
+    - name: Policy image puller to prod..
+      shell: oc policy add-role-to-group system:image-puller system:serviceaccounts:tasks-prod -n cicd
+    - name: Create pipelines
+      shell: oc create -f ./../templates/jenkins-build-config.yml -n cicd
   tags:
     - cicd
 
@@ -182,7 +192,7 @@
     - name: Wait for the demo environment to fully spin up
       shell: sleep 300 
     - name: Kick off the pipeline
-      shell: "oc start-build tasks-pipeline -n tasks-dev"
+      shell: "oc start-build cicd-bc -n cicd"
   tags:
     - cicd
 
