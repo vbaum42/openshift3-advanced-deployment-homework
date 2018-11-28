@@ -9,8 +9,20 @@ ansible masters -m shell -a 'htpasswd -b /etc/origin/master/htpasswd betty r3dh4
 
 oc adm groups new alpha amy andrew
 oc label group alpha client=alpha
+oc adm policy add-role-to-group admin alpha -n alpha
 oc adm groups new beta brian betty
 oc label group beta client=beta
+oc adm policy add-role-to-group admin beta -n beta
+oc adm groups new common
+oc label group common client=common
+oc label node node1.$GUID.internal zone=alpha
+oc label node node2.$GUID.internal zone=beta
+
+oc patch clusterrolebinding.rbac self-provisioners -p '{"subjects": null}'
+
+oc patch namespace alpha -p '{"metadata":{"annotations":{"openshift.io/node-selector": "zone=alpha"}}}'
+
+oc patch namespace beta -p '{"metadata":{"annotations":{"openshift.io/node-selector": "zone=beta"}}}'
 
 for OCP_USERNAME in amy andrew brian betty; do
 
