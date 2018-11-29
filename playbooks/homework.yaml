@@ -170,12 +170,20 @@
 - name: Creation of projects for Alpha and Beta clients
   hosts: localhost
   tasks:
+    - name: Labeling node1
+      shell: oc label node node1.$GUID.internal zone=alpha
+    - name: Labeling node2
+      shell: oc label node node2.$GUID.internal zone=beta
     - name: Create alpha project
       shell: oc new-project alpha
+    - name: Adding node selector to alpha project
+      shell: oc patch namespace alpha -p '{"metadata":{"annotations":{"openshift.io/node-selector": "zone=alpha"}}}'
     - name: Create alpha project mongodb app
       shell: oc new-app --template=nodejs-mongodb-example -n alpha
     - name: Create beta project
       shell: oc new-project beta
+    - name: Adding node selector to beta project
+      shell: oc patch namespace beta -p '{"metadata":{"annotations":{"openshift.io/node-selector": "zone=beta"}}}'
     - name: Create beta project mongodb app
       shell: oc new-app --template=nodejs-mongodb-example -n beta
   tags:
@@ -215,3 +223,7 @@
   tasks:
     - name: Multitenancy Test
       script: ./../scripts/multitenancy.sh
+    - name: Sleep
+      shell: sleep 120
+    - name: Add new cluster admin for testing purposes
+      shell: oc adm add-cluster-role-to-user cluster-admin admin
