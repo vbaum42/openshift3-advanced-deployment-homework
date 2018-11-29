@@ -6,7 +6,7 @@ ansible masters -m shell -a 'htpasswd -b /etc/origin/master/htpasswd amy r3dh4t1
 ansible masters -m shell -a 'htpasswd -b /etc/origin/master/htpasswd andrew r3dh4t1!'
 ansible masters -m shell -a 'htpasswd -b /etc/origin/master/htpasswd brian r3dh4t1!'
 ansible masters -m shell -a 'htpasswd -b /etc/origin/master/htpasswd betty r3dh4t1!'
-ansible masters -m shell -a 'htpasswd -b /etc/origin/master/htpasswd admin admin'
+ansible masters -m shell -a 'htpasswd -b /etc/origin/master/htpasswd admin adm1n'
 
 
 oc adm add-cluster-role-to-user cluster-admin admin
