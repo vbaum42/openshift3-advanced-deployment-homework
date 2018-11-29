@@ -8,8 +8,14 @@ ansible masters -m shell -a 'htpasswd -b /etc/origin/master/htpasswd brian r3dh4
 ansible masters -m shell -a 'htpasswd -b /etc/origin/master/htpasswd betty r3dh4t1!'
 ansible masters -m shell -a 'htpasswd -b /etc/origin/master/htpasswd admin adm1n'
 
-
-
+oc label node node1.$GUID.internal zone=alpha
+oc label node node2.$GUID.internal zone=beta
+oc new-project alpha
+oc patch namespace alpha -p '{"metadata":{"annotations":{"openshift.io/node-selector": "zone=alpha"}}}'
+oc new-app --template=nodejs-mongodb-example -n alpha
+oc new-project beta
+oc patch namespace beta -p '{"metadata":{"annotations":{"openshift.io/node-selector": "zone=beta"}}}'
+oc new-app --template=nodejs-mongodb-example -n beta
 oc adm groups new alpha amy andrew
 oc label group alpha client=alpha
 oc adm policy add-role-to-group admin alpha -n alpha
