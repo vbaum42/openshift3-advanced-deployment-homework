@@ -203,4 +203,4 @@
     - name: Sleep
       shell: sleep 120
     - name: Add new cluster admin for testing purposes
-      shell: oc adm add-cluster-role-to-user cluster-admin admin
+      shell: oc adm policy add-cluster-role-to-user cluster-admin admin
