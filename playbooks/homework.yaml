@@ -172,8 +172,12 @@
   tasks:
     - name: Create alpha project
       shell: oc new-project alpha
+    - name: Create alpha project mongodb app
+      shell: oc new-app --template=nodejs-mongodb-example -n alpha
     - name: Create beta project
       shell: oc new-project beta
+    - name: Create beta project mongodb app
+      shell: oc new-app --template=nodejs-mongodb-example -n beta
   tags:
     - create_projects
 
